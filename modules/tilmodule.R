@@ -27,82 +27,79 @@ tilmap_UI <- function(id) {
 }
 
 tilmap <- function(
-    input, 
-    output, 
-    session, 
+    id,
     group_display_choice, 
     group_internal_choice, 
     sample_group_df,
     subset_df,
     plot_colors, 
-    group_options){
-    
-    
-    data_df <- reactive({
-        dplyr::select(
-            subset_df(),
-            x = group_internal_choice(), 
-            label = "Slide", 
-            dplyr::everything()) 
-    })
-    
-    relationship_df <- reactive({
-        panimmune_data$feature_df %>% 
-            dplyr::filter(`Variable Class` == "TIL Map Characteristic") %>% 
+    group_options   
+) {
+    moduleServer(id, function(input, output, session) {
+        data_df <- reactive({
             dplyr::select(
-                INTERNAL = FeatureMatrixLabelTSV, 
-                DISPLAY = FriendlyLabel,
-                `Variable Class`)
+                subset_df(),
+                x = group_internal_choice(), 
+                label = "Slide", 
+                dplyr::everything()) 
+        })
+        
+        relationship_df <- reactive({
+            panimmune_data$feature_df %>% 
+                dplyr::filter(`Variable Class` == "TIL Map Characteristic") %>% 
+                dplyr::select(
+                    INTERNAL = FeatureMatrixLabelTSV, 
+                    DISPLAY = FriendlyLabel,
+                    `Variable Class`)
+        })
+        
+        callModule(
+            distributions_plot_module,
+            "dist",
+            "tilmap_dist_plot",
+            data_df,
+            relationship_df,
+            sample_group_df,
+            plot_colors,
+            group_display_choice,
+            key_col = "label"
+        )
+        
+        table_df <- reactive({
+            
+            df <- panimmune_data$fmx_df
+            data <- event_data("plotly_click", source = "tilmap_dist_plot")
+            if (!is.null(data)) df <- dplyr::filter(df, Slide %in% data$key)
+            
+            names_df <- panimmune_data$feature_df %>%
+                dplyr::filter(`Variable Class` == "TIL Map Characteristic") %>%
+                dplyr::filter(VariableType == "Numeric") %>%
+                dplyr::select(FeatureMatrixLabelTSV, FriendlyLabel)
+            
+            df %>% 
+                dplyr::select(
+                    "ParticipantBarcode", 
+                    "Study", 
+                    "Slide",
+                    names_df$FeatureMatrixLabelTSV) %>% 
+                tidyr::drop_na() %>% 
+                tidyr::gather(FeatureMatrixLabelTSV, value, -c(ParticipantBarcode, Study, Slide)) %>% 
+                dplyr::full_join(names_df) %>% 
+                dplyr::mutate(value = round(value, digits = 1)) %>% 
+                dplyr::select(-FeatureMatrixLabelTSV) %>% 
+                tidyr::spread(FriendlyLabel, value) %>% 
+                dplyr::mutate(Image = stringr::str_c(
+                    "<a href=\"",
+                    "https://quip1.bmi.stonybrook.edu:443/camicroscope/osdCamicroscope.php?tissueId=",
+                    Slide,
+                    "\">",
+                    Slide,
+                    "</a>"
+                )) %>%
+                dplyr::select(-Slide)
+        })
+        
+        callModule(data_table_module, "til_table", table_df, escape = F)
+        
     })
-    
-    callModule(
-        distributions_plot_module,
-        "dist",
-        "tilmap_dist_plot",
-        data_df,
-        relationship_df,
-        sample_group_df,
-        plot_colors,
-        group_display_choice,
-        key_col = "label"
-    )
-    
-    table_df <- reactive({
-        
-        df <- panimmune_data$fmx_df
-        data <- event_data("plotly_click", source = "tilmap_dist_plot")
-        if (!is.null(data)) df <- dplyr::filter(df, Slide %in% data$key)
-        
-        names_df <- panimmune_data$feature_df %>%
-            dplyr::filter(`Variable Class` == "TIL Map Characteristic") %>%
-            dplyr::filter(VariableType == "Numeric") %>%
-            dplyr::select(FeatureMatrixLabelTSV, FriendlyLabel)
-        
-        df %>% 
-            dplyr::select(
-                "ParticipantBarcode", 
-                "Study", 
-                "Slide",
-                names_df$FeatureMatrixLabelTSV) %>% 
-            tidyr::drop_na() %>% 
-            tidyr::gather(FeatureMatrixLabelTSV, value, -c(ParticipantBarcode, Study, Slide)) %>% 
-            dplyr::full_join(names_df) %>% 
-            dplyr::mutate(value = round(value, digits = 1)) %>% 
-            dplyr::select(-FeatureMatrixLabelTSV) %>% 
-            tidyr::spread(FriendlyLabel, value) %>% 
-            dplyr::mutate(Image = stringr::str_c(
-                "<a href=\"",
-                "https://quip1.bmi.stonybrook.edu:443/camicroscope/osdCamicroscope.php?tissueId=",
-                Slide,
-                "\">",
-                Slide,
-                "</a>"
-            )) %>%
-            dplyr::select(-Slide)
-    })
-    
-    callModule(data_table_module, "til_table", table_df, escape = F)
-    
-    
-    
 }

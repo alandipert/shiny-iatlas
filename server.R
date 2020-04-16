@@ -82,8 +82,7 @@ shinyServer(function(input, output, session) {
         reactive(plot_colors()))
     
     # TILmap features
-    callModule(
-        tilmap,
+    tilmap(
         "module7",
         reactive(input$ss_choice),
         reactive(group_internal_choice()),
