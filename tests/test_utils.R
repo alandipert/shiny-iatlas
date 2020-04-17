@@ -1,6 +1,6 @@
 library(testthat)
 library(dplyr)
-source("../functions/utils.R")
+source("../functions/utils.R", local = TRUE)
 context("utils.R")
 
 

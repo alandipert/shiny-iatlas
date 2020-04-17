@@ -8,6 +8,6 @@ USE_REMOTE_GS <- config_yaml$gs_remote
 
 panimmune_data <- load_data()
 
-purrr::walk(config_yaml$module_files, source)
-purrr::walk(config_yaml$page_files, source)
+purrr::walk(config_yaml$module_files, source, local = TRUE)
+purrr::walk(config_yaml$page_files, source, local = TRUE)
 

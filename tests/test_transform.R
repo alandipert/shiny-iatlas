@@ -1,7 +1,7 @@
 library(testthat)
 library(dplyr)
-source("../functions/transform.R")
-source("../functions/utils.R")
+source("../functions/transform.R", local = TRUE)
+source("../functions/utils.R", local = TRUE)
 context("transform.R")
 
 # distribution plot functions -------------------------------------------------
